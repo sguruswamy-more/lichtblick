@@ -327,6 +327,12 @@ const DisabledSettings: SettingsTreeNodes = {
         value: [1, 2, 3],
         disabled: true,
       },
+      button: {
+        input: "button",
+        label: "Button",
+        id: "disabled-btn",
+        disabled: true,
+      },
     },
     children: {},
   },
@@ -1073,4 +1079,59 @@ export const SelectEmptyInvalid: StoryObj = {
   },
 
   play: clickSelect,
+};
+
+const ButtonSettings: SettingsTreeNodes = {
+  buttons: {
+    label: "Button Fields",
+    icon: "Settings",
+    fields: {
+      containedPrimary: {
+        input: "button",
+        label: "Contained Primary",
+        id: "btn-contained-primary",
+        variant: "contained",
+        color: "primary",
+      },
+      outlinedSecondary: {
+        input: "button",
+        label: "Outlined Secondary",
+        id: "btn-outlined-secondary",
+        variant: "outlined",
+        color: "secondary",
+      },
+      textError: {
+        input: "button",
+        label: "Text Error",
+        id: "btn-text-error",
+        variant: "text",
+        color: "error",
+      },
+      defaultButton: {
+        input: "button",
+        label: "Default Button",
+        id: "btn-default",
+      },
+      disabledButton: {
+        input: "button",
+        label: "Disabled Button",
+        id: "btn-disabled",
+        disabled: true,
+      },
+      largeSuccess: {
+        input: "button",
+        label: "Large Success",
+        id: "btn-large-success",
+        variant: "contained",
+        color: "success",
+        size: "large",
+      },
+    },
+  },
+};
+
+export const ButtonFields: StoryObj = {
+  render: () => {
+    return <Wrapper nodes={ButtonSettings} />;
+  },
 };

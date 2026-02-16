@@ -85,4 +85,9 @@ export const useStyles = makeStyles<void, "error">()((theme, _params, classes) =
       },
     },
   },
+  buttonField: {
+    gridColumn: "1 / -1",
+    paddingInline: theme.spacing(1.5),
+    paddingBlock: theme.spacing(0.25),
+  },
 }));

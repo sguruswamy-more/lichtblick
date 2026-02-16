@@ -409,6 +409,58 @@ describe("FieldEditor", () => {
     });
   });
 
+  describe("Button input", () => {
+    const buttonId = "test-button";
+
+    it("renders a button with label text", async () => {
+      await renderComponent({
+        field: { input: "button", label, id: buttonId },
+      });
+
+      const button = screen.getByTestId("FieldEditor-Button");
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent(label);
+    });
+
+    it("dispatches perform-button-action when clicked", async () => {
+      const { props } = await renderComponent({
+        field: { input: "button", label, id: buttonId },
+      });
+
+      const button = screen.getByTestId("FieldEditor-Button");
+      await userEvent.click(button);
+
+      expect(props.actionHandler).toHaveBeenCalledWith({
+        action: "perform-button-action",
+        payload: {
+          id: buttonId,
+          path: props.path,
+        },
+      });
+    });
+
+    it("renders a disabled button when disabled is true", async () => {
+      const { props } = await renderComponent({
+        field: { input: "button", label, id: buttonId, disabled: true },
+      });
+
+      const button = screen.getByTestId("FieldEditor-Button");
+      expect(button).toBeDisabled();
+
+      fireEvent.click(button);
+      expect(props.actionHandler).not.toHaveBeenCalled();
+    });
+
+    it("does not render a label column for button fields", async () => {
+      await renderComponent({
+        field: { input: "button", label, id: buttonId },
+      });
+
+      const fieldEditorLabels = screen.queryByTestId("FieldEditor");
+      expect(fieldEditorLabels).not.toBeInTheDocument();
+    });
+  });
+
   it("renders a message path input and triggers update action when value changes", async () => {
     const input = "messagepath";
 

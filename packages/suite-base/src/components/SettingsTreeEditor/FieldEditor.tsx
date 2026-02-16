@@ -9,6 +9,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import ErrorIcon from "@mui/icons-material/Error";
 import {
   Autocomplete,
+  Button,
   MenuItem,
   MenuList,
   MenuListProps,
@@ -354,6 +355,25 @@ function FieldInput({
       );
     case "legendcontrols":
       return <LegendControls />;
+    case "button":
+      return (
+        <Button
+          data-testid="FieldEditor-Button"
+          variant={field.variant ?? "contained"}
+          color={field.color ?? "primary"}
+          size={field.size ?? "small"}
+          disabled={field.disabled}
+          fullWidth
+          onClick={() => {
+            actionHandler({
+              action: "perform-button-action",
+              payload: { id: field.id, path },
+            });
+          }}
+        >
+          {field.label}
+        </Button>
+      );
     case "slider":
       return (
         <Slider
@@ -462,27 +482,29 @@ function FieldEditorComponent(props: Readonly<FieldEditorProps>): React.JSX.Elem
 
   return (
     <>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="flex-end"
-        gap={0.5}
-        paddingLeft={paddingLeft}
-        fullHeight
-        data-testid="FieldEditor"
-      >
-        {statusButton}
-        {props.field.error && (
-          <Tooltip
-            arrow
-            placement="top"
-            title={<Typography variant="subtitle2">{props.field.error}</Typography>}
-          >
-            <ErrorIcon color="error" fontSize="small" />
-          </Tooltip>
-        )}
-        <FieldLabel field={props.field} />
-      </Stack>
+      {props.field.input !== "button" && (
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="flex-end"
+          gap={0.5}
+          paddingLeft={paddingLeft}
+          fullHeight
+          data-testid="FieldEditor"
+        >
+          {statusButton}
+          {props.field.error && (
+            <Tooltip
+              arrow
+              placement="top"
+              title={<Typography variant="subtitle2">{props.field.error}</Typography>}
+            >
+              <ErrorIcon color="error" fontSize="small" />
+            </Tooltip>
+          )}
+          <FieldLabel field={props.field} />
+        </Stack>
+      )}
       <Tooltip
         arrow
         placement="right"
@@ -493,7 +515,10 @@ function FieldEditorComponent(props: Readonly<FieldEditorProps>): React.JSX.Elem
         }
       >
         <div
-          className={cx(classes.fieldWrapper, { [classes.error]: props.field.error != undefined })}
+          className={cx(
+            props.field.input === "button" ? classes.buttonField : classes.fieldWrapper,
+            { [classes.error]: props.field.error != undefined },
+          )}
         >
           <FieldInput actionHandler={props.actionHandler} field={props.field} path={props.path} />
         </div>

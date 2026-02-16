@@ -787,6 +787,35 @@ export type SettingsTreeFieldLegendControl = {
   value?: undefined;
 };
 
+export type SettingsTreeFieldButton = {
+  input: "button";
+  value?: undefined;
+
+  /**
+   * A unique identifier for the button, used in the action payload
+   * to identify which button was clicked.
+   */
+  id: string;
+
+  /**
+   * The MUI Button variant to use.
+   * @default "contained"
+   */
+  variant?: "text" | "outlined" | "contained";
+
+  /**
+   * The MUI Button color to use.
+   * @default "primary"
+   */
+  color?: "inherit" | "primary" | "secondary" | "success" | "error" | "info" | "warning";
+
+  /**
+   * The MUI Button size to use.
+   * @default "small"
+   */
+  size?: "small" | "medium" | "large";
+};
+
 export type SettingsTreeFieldValue =
   | SettingsTreeFieldAutocomplete
   | SettingsTreeFieldBoolean
@@ -803,7 +832,8 @@ export type SettingsTreeFieldValue =
   | SettingsTreeFieldSlider
   | SettingsTreeFieldVec3
   | SettingsTreeFieldVec2
-  | SettingsTreeFieldLegendControl;
+  | SettingsTreeFieldLegendControl
+  | SettingsTreeFieldButton;
 
 export type SettingsTreeField = SettingsTreeFieldValue & {
   /**
@@ -972,6 +1002,11 @@ export type SettingsTreeActionReorder = {
   };
 };
 
+export type SettingsTreeActionPerformButton = {
+  action: "perform-button-action";
+  payload: { id: string; path: readonly string[] };
+};
+
 /**
  * Represents actions that can be dispatched to source of the SettingsTree to implement
  * edits and updates.
@@ -979,7 +1014,8 @@ export type SettingsTreeActionReorder = {
 export type SettingsTreeAction =
   | SettingsTreeActionUpdate
   | SettingsTreeActionPerformNode
-  | SettingsTreeActionReorder;
+  | SettingsTreeActionReorder
+  | SettingsTreeActionPerformButton;
 
 export type SettingsTreeNodes = Record<string, undefined | SettingsTreeNode>;
 
