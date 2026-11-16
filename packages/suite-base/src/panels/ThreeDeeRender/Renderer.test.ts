@@ -532,6 +532,39 @@ describe("3D Renderer", () => {
     renderer.dispose();
   });
 
+  it("toggles grouping topics by namespace from the topics node menu", () => {
+    // Given: A renderer instance with grouping enabled by default
+    const renderer = new Renderer({ ...defaultRendererProps, canvas });
+    const toggleAction = () =>
+      renderer.settings
+        .tree()
+        .topics?.actions?.find(
+          (action) => action.type === "action" && action.id === "toggle-group-by-namespace",
+        );
+    const performToggle = () => {
+      renderer.settings.handleAction({
+        action: "perform-node-action",
+        payload: { id: "toggle-group-by-namespace", path: ["topics"] },
+      });
+    };
+    expect(toggleAction()).toMatchObject({ label: "Show as flat list" });
+
+    // When: Toggling the setting off
+    performToggle();
+
+    // Then: The config and the menu label are updated
+    expect(renderer.config.scene.groupTopicsByNamespace).toBe(false);
+    expect(toggleAction()).toMatchObject({ label: "Group by namespace" });
+
+    // When: Toggling the setting back on
+    performToggle();
+
+    // Then: Grouping is enabled again
+    expect(renderer.config.scene.groupTopicsByNamespace).toBe(true);
+
+    renderer.dispose();
+  });
+
   it("gets camera state from camera handler", () => {
     // Given: A renderer instance
     const renderer = new Renderer({ ...defaultRendererProps, canvas });
