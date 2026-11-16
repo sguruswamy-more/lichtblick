@@ -52,6 +52,7 @@ import { RendererContext, useRendererEvent, useRendererProperty } from "./Render
 import { RendererOverlay } from "./RendererOverlay";
 import { useStyles } from "./ThreeDeeRender.style";
 import { CameraState, DEFAULT_CAMERA_STATE } from "./camera";
+import { groupTopicsByNamespace } from "./groupTopicsByNamespace";
 import {
   PublishRos1Datatypes,
   PublishRos2Datatypes,
@@ -356,15 +357,39 @@ export function ThreeDeeRender(props: Readonly<ThreeDeeRenderProps>): React.JSX.
     setFocusedSettingsPath(["topics", topic]);
   }, []);
 
+  // Optionally nest topics by namespace in the displayed settings tree. Paths and actions are
+  // translated so the renderer and scene extensions keep working with flat topic paths.
+  const groupTopics = config.scene.groupTopicsByNamespace !== false;
+  const groupedTree = useMemo(
+    () => (groupTopics && settingsTree ? groupTopicsByNamespace(settingsTree) : undefined),
+    [groupTopics, settingsTree],
+  );
+
+  const settingsEditorActionHandler = useCallback(
+    (action: SettingsTreeAction) => {
+      if (!groupedTree) {
+        actionHandler(action);
+        return;
+      }
+      for (const internalAction of groupedTree.toInternalActions(action)) {
+        actionHandler(internalAction);
+      }
+    },
+    [actionHandler, groupedTree],
+  );
+
   // Rebuild the settings sidebar tree as needed
   useEffect(() => {
     context.updatePanelSettingsEditor({
-      actionHandler,
+      actionHandler: settingsEditorActionHandler,
       enableFilter: true,
-      focusedPath: focusedSettingsPath,
-      nodes: settingsTree ?? {},
+      focusedPath:
+        focusedSettingsPath && groupedTree
+          ? groupedTree.toDisplayPath(focusedSettingsPath)
+          : focusedSettingsPath,
+      nodes: groupedTree?.nodes ?? settingsTree ?? {},
     });
-  }, [actionHandler, context, focusedSettingsPath, settingsTree]);
+  }, [context, focusedSettingsPath, groupedTree, settingsEditorActionHandler, settingsTree]);
 
   // Update the renderer's reference to `config` when it changes. Note that this does *not*
   // automatically update the settings tree.

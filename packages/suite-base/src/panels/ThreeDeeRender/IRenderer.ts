@@ -164,6 +164,8 @@ export type RendererConfig = {
     syncCamera?: boolean;
     /** Toggles visibility of all topics */
     topicsVisible?: boolean;
+    /** Nest topics in the settings tree by their `/`-separated namespace (default: true) */
+    groupTopicsByNamespace?: boolean;
   };
   publish: {
     /** The type of message to publish when clicking in the scene */

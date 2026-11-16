@@ -40,6 +40,8 @@ export const threeDee = {
   followMode: "Follow mode",
   followModeHelp: "Change the camera behavior during playback to follow the display frame or not.",
   frameNotFound: "Frame {{frameId}} not found",
+  flatTopicList: "Show as flat list",
+  groupTopicsByNamespace: "Group by namespace",
   hideAll: "Hide all",
   historySize: "History size",
   labels: "Labels",
@@ -97,6 +99,7 @@ export const threeDee = {
 
   // Topics
   topics: "Topics",
+  topicGroupHasErrors: "One or more topics in this group have errors",
 
   // Custom layers
   addGrid: "Add Grid",

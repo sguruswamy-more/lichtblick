@@ -925,6 +925,14 @@ export class Renderer extends EventEmitter<RendererEvents> implements IRenderer 
         actions: [
           { id: "show-all", type: "action", label: i18next.t("threeDee:showAll") },
           { id: "hide-all", type: "action", label: i18next.t("threeDee:hideAll") },
+          {
+            id: "toggle-group-by-namespace",
+            type: "action",
+            label:
+              this.config.scene.groupTopicsByNamespace === false
+                ? i18next.t("threeDee:groupTopicsByNamespace")
+                : i18next.t("threeDee:flatTopicList"),
+          },
         ],
         children: this.settings.tree()["topics"]?.children,
         handler: this.#handleTopicsAction,
@@ -1635,6 +1643,11 @@ export class Renderer extends EventEmitter<RendererEvents> implements IRenderer 
     } else if (action.payload.id === "hide-all") {
       // Hide all topics
       toggleTopicVisibility(false);
+    } else if (action.payload.id === "toggle-group-by-namespace") {
+      this.updateConfig((draft) => {
+        draft.scene.groupTopicsByNamespace = draft.scene.groupTopicsByNamespace === false;
+      });
+      this.#updateTopicsAndCustomLayerSettingsNodes();
     }
   };
 
