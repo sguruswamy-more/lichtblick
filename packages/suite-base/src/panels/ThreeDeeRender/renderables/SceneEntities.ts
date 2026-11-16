@@ -20,6 +20,8 @@ import {
   TextPrimitive,
   TriangleListPrimitive,
 } from "@foxglove/schemas";
+import { t } from "i18next";
+import * as _ from "lodash-es";
 
 import { toNanoSec } from "@lichtblick/rostime";
 import { SettingsTreeAction } from "@lichtblick/suite";
@@ -42,6 +44,21 @@ import { LayerSettingsEntity } from "../settings";
 import { topicIsConvertibleToSchema } from "../topicIsConvertibleToSchema";
 import { makePose } from "../transforms";
 import { PrimitivePool } from "./primitives/PrimitivePool";
+import { ALL_PRIMITIVE_TYPES, PRIMITIVE_KEYS, PrimitiveKey } from "./primitives/constants";
+
+/** Prefix for the keys of per primitive type nodes under a topic in the settings tree */
+const PRIMITIVE_NODE_KEY_PREFIX = "primitive:";
+
+const PRIMITIVE_LABEL_KEYS = {
+  arrows: "threeDee:primitiveArrows",
+  cubes: "threeDee:primitiveCubes",
+  cylinders: "threeDee:primitiveCylinders",
+  lines: "threeDee:primitiveLines",
+  models: "threeDee:primitiveModels",
+  spheres: "threeDee:primitiveSpheres",
+  texts: "threeDee:primitiveTexts",
+  triangles: "threeDee:primitiveTriangles",
+} as const satisfies Record<PrimitiveKey, string>;
 
 const SCENE_ENTITIES_DEFAULT_SETTINGS: LayerSettingsEntity = {
   showOutlines: true,
@@ -99,6 +116,26 @@ export class FoxgloveSceneEntities extends SceneExtension<TopicEntities> {
         handler: this.handleSettingsAction,
       };
 
+      // Add a visibility toggle for each primitive type that has been received on this topic
+      const primitiveTypes = this.renderables.get(topic.name)?.primitiveTypes;
+      if (primitiveTypes && primitiveTypes.size > 0) {
+        node.children = {};
+        ALL_PRIMITIVE_TYPES.forEach((primitiveType, index) => {
+          if (!primitiveTypes.has(primitiveType)) {
+            return;
+          }
+          const key = PRIMITIVE_KEYS[primitiveType];
+          const child: SettingsTreeNodeWithActionHandler = {
+            label: t(PRIMITIVE_LABEL_KEYS[key]),
+            icon: "Shapes",
+            order: index,
+            visible: config.primitives?.[key]?.visible ?? true,
+            handler: this.#handleSettingsActionPrimitive,
+          };
+          node.children![`${PRIMITIVE_NODE_KEY_PREFIX}${key}`] = child;
+        });
+      }
+
       entries.push({ path: ["topics", topic.name], node });
     }
     return entries;
@@ -143,9 +180,40 @@ export class FoxgloveSceneEntities extends SceneExtension<TopicEntities> {
     }
   };
 
+  #handleSettingsActionPrimitive = (action: SettingsTreeAction): void => {
+    const path = action.payload.path;
+    if (action.action !== "update" || path.length !== 4) {
+      return;
+    }
+
+    // The settings tree uses paths of the form
+    //   ["topics", <topic>, "primitive:"<key>, <field>]
+    // while the config is stored at
+    //   ["topics", <topic>, "primitives", <key>, <field>]
+    const topicName = path[1]!;
+    const primitiveKey = path[2]!.slice(PRIMITIVE_NODE_KEY_PREFIX.length) as PrimitiveKey;
+    const fieldName = path[3]!;
+    this.renderer.updateConfig((draft) => {
+      _.set(
+        draft,
+        ["topics", topicName, "primitives", primitiveKey, fieldName],
+        action.payload.value,
+      );
+    });
+
+    const renderable = this.renderables.get(topicName);
+    if (renderable) {
+      const settings = this.renderer.config.topics[topicName];
+      renderable.userData.settings = { ...SCENE_ENTITIES_DEFAULT_SETTINGS, ...settings };
+    }
+
+    this.updateSettingsTree();
+  };
+
   #handleSceneUpdate = (messageEvent: PartialMessageEvent<SceneUpdate>): void => {
     const topic = messageEvent.topic;
     const sceneUpdates = messageEvent.message;
+    const prevPrimitiveTypeCount = this.renderables.get(topic)?.primitiveTypes.size ?? 0;
 
     for (const deletionMsg of sceneUpdates.deletions ?? []) {
       if (deletionMsg) {
@@ -162,6 +230,11 @@ export class FoxgloveSceneEntities extends SceneExtension<TopicEntities> {
           toNanoSec(messageEvent.receiveTime),
         );
       }
+    }
+
+    // If a new primitive type appeared on this topic, rebuild its settings node
+    if ((this.renderables.get(topic)?.primitiveTypes.size ?? 0) !== prevPrimitiveTypeCount) {
+      this.updateSettingsTree();
     }
   };
 

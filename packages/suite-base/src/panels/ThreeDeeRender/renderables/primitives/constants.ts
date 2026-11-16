@@ -26,3 +26,17 @@ export const ALL_PRIMITIVE_TYPES = [
   PrimitiveType.TEXTS,
   PrimitiveType.TRIANGLES,
 ];
+
+/** Field name of each primitive type in a `foxglove.SceneEntity` message */
+export const PRIMITIVE_KEYS = {
+  [PrimitiveType.CUBES]: "cubes",
+  [PrimitiveType.MODELS]: "models",
+  [PrimitiveType.LINES]: "lines",
+  [PrimitiveType.CYLINDERS]: "cylinders",
+  [PrimitiveType.ARROWS]: "arrows",
+  [PrimitiveType.SPHERES]: "spheres",
+  [PrimitiveType.TEXTS]: "texts",
+  [PrimitiveType.TRIANGLES]: "triangles",
+} as const;
+
+export type PrimitiveKey = (typeof PRIMITIVE_KEYS)[PrimitiveType];

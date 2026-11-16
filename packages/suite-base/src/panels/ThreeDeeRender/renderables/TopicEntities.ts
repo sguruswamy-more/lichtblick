@@ -18,7 +18,7 @@ import { RenderableModels } from "./primitives/RenderableModels";
 import { RenderableSpheres } from "./primitives/RenderableSpheres";
 import { RenderableTexts } from "./primitives/RenderableTexts";
 import { RenderableTriangles } from "./primitives/RenderableTriangles";
-import { ALL_PRIMITIVE_TYPES, PrimitiveType } from "./primitives/constants";
+import { ALL_PRIMITIVE_TYPES, PRIMITIVE_KEYS, PrimitiveType } from "./primitives/constants";
 import { missingTransformMessage, MISSING_TRANSFORM } from "./transforms";
 import type { IRenderer } from "../IRenderer";
 import { BaseUserData, Renderable } from "../Renderable";
@@ -43,20 +43,11 @@ type EntityRenderables = {
   [PrimitiveType.TRIANGLES]?: RenderableTriangles;
 };
 
-const PRIMITIVE_KEYS = {
-  [PrimitiveType.CUBES]: "cubes",
-  [PrimitiveType.MODELS]: "models",
-  [PrimitiveType.LINES]: "lines",
-  [PrimitiveType.CYLINDERS]: "cylinders",
-  [PrimitiveType.ARROWS]: "arrows",
-  [PrimitiveType.SPHERES]: "spheres",
-  [PrimitiveType.TEXTS]: "texts",
-  [PrimitiveType.TRIANGLES]: "triangles",
-} as const;
-
 export class TopicEntities extends Renderable<EntityTopicUserData> {
   public override pickable = false;
   #renderablesById = new Map<string, EntityRenderables>();
+  /** Primitive types that have been received on this topic, used to build the settings tree */
+  public readonly primitiveTypes = new Set<PrimitiveType>();
 
   public constructor(
     name: string,
@@ -97,9 +88,12 @@ export class TopicEntities extends Renderable<EntityTopicUserData> {
     }
 
     for (const renderables of this.#renderablesById.values()) {
-      for (const renderable of Object.values(renderables)) {
-        const entity = renderable.userData.entity;
-        if (!entity) {
+      for (const [primitiveType, renderable] of Object.entries(renderables) as [
+        PrimitiveType,
+        EntityRenderables[PrimitiveType],
+      ][]) {
+        const entity = renderable?.userData.entity;
+        if (!renderable || !entity) {
           continue;
         }
 
@@ -108,6 +102,12 @@ export class TopicEntities extends Renderable<EntityTopicUserData> {
         if (expiresAt != undefined && currentTime > expiresAt) {
           this.#deleteEntity(entity.id);
           break;
+        }
+
+        // Skip pose updates for primitive types the user has hidden
+        if (!this.isPrimitiveTypeVisible(primitiveType)) {
+          renderable.visible = false;
+          continue;
         }
 
         const frameId = this.renderer.normalizeFrameId(entity.frame_id);
@@ -133,6 +133,11 @@ export class TopicEntities extends Renderable<EntityTopicUserData> {
     }
   }
 
+  /** Returns false if the user has hidden all primitives of the given type on this topic */
+  public isPrimitiveTypeVisible(primitiveType: PrimitiveType): boolean {
+    return this.userData.settings.primitives?.[PRIMITIVE_KEYS[primitiveType]]?.visible ?? true;
+  }
+
   public addOrUpdateEntity(entity: SceneEntity, receiveTime: bigint): void {
     let renderables = this.#renderablesById.get(entity.id);
     if (!renderables) {
@@ -144,6 +149,7 @@ export class TopicEntities extends Renderable<EntityTopicUserData> {
       const hasPrimitives = entity[PRIMITIVE_KEYS[primitiveType]].length > 0;
       let renderable = renderables[primitiveType];
       if (hasPrimitives) {
+        this.primitiveTypes.add(primitiveType);
         if (!renderable) {
           renderable = this.primitivePool.acquire(primitiveType);
           renderable.name = `${entity.id}:${primitiveType} on ${this.topic}`;
