@@ -7,6 +7,8 @@
 
 import type { SettingsTreeField } from "@lichtblick/suite";
 
+import type { PrimitiveKey } from "./renderables/primitives/constants";
+
 export type SelectEntry = { label: string; value: string };
 
 export type TwoColors = [string, string];
@@ -23,10 +25,17 @@ export type BaseSettings = {
   frameLocked?: boolean;
 };
 
+export type LayerSettingsEntityPrimitive = {
+  /** Visibility of all primitives of this type on the topic. Defaults to true. */
+  visible?: boolean;
+};
+
 export type LayerSettingsEntity = BaseSettings & {
   showOutlines: boolean | undefined;
   color: string | undefined;
   selectedIdVariable: string | undefined;
+  /** Per primitive type settings, keyed by the primitive's field name in `SceneEntity` */
+  primitives?: Partial<Record<PrimitiveKey, LayerSettingsEntityPrimitive>>;
 };
 
 /**
